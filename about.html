@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="theme-color" content="#1d4ed8" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>О нас — PlanDo</title>
+  </head>
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <section class="hero">
+          <div class="hero__content">
+            <p class="hero__eyebrow">ПРАКТИКИ 13–14</p>
+            <h1 class="hero__title">О приложении PlanDo</h1>
+            <p class="hero__text">
+              PlanDo — учебный PWA-проект для заметок и задач. Приложение создано
+              для демонстрации App Shell, кэширования статических ресурсов, динамических
+              страниц и офлайн-поддержки.
+            </p>
+            <div class="hero__controls">
+              <a class="button button--primary button--small" href="./index.html">Вернуться к задачам</a>
+            </div>
+          </div>
+        </section>
+      </header>
+
+      <main class="container">
+        <section class="card">
+          <h2 class="card__title">Что делает это приложение</h2>
+          <ul class="todo-points">
+            <li>Сохраняет статические ресурсы в кэше при первом посещении.</li>
+            <li>Загружает страницы по стратегии Network First.</li>
+            <li>Показывает офлайн-страницу, когда сеть недоступна.</li>
+            <li>Хранит список задач в localStorage и работает без сети.</li>
+            <li>Поддерживает установку как PWA через Web App Manifest.</li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Почему это App Shell</h2>
+          <p class="card__hint">
+            App Shell — это оболочка интерфейса, которая кэшируется заранее. Она гарантирует,
+            что приложение быстро запускается и доступно офлайн, а динамические страницы
+            обновляются через сеть, когда это возможно.
+          </p>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="site-footer__content">
+          <div>
+            <p class="site-footer__title">PlanDo</p>
+            <p class="site-footer__text">
+              Учебное приложение для PWA с поддержкой офлайн-режима и кеширования.
+            </p>
+          </div>
+          <div>
+            <p class="site-footer__title">Страница доступна офлайн</p>
+            <p class="site-footer__text">
+              Благодаря правильной стратегии кеширования, страница «О нас» доступна
+              без сети, если она была ранее загружена.
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
