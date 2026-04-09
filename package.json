@@ -1,0 +1,28 @@
+{
+  "name": "pr13-14-main",
+  "version": "1.0.0",
+  "description": "> Для проверки PWA и Service Worker убедитесь, что приложение запускается в безопасном контексте. В браузере можно использовать `localhost`, который считается безопасным даже при обычном HTTP, либо развернуть приложение через HTTPS-сервер.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MNwa610/kr3_fbf.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MNwa610/kr3_fbf/issues"
+  },
+  "homepage": "https://github.com/MNwa610/kr3_fbf#readme",
+  "dependencies": {
+    "body-parser": "^2.2.2",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3",
+    "web-push": "^3.6.7"
+  }
+}

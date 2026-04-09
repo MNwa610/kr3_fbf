@@ -36,6 +36,8 @@ const filterActiveBtn = document.getElementById('filterActiveBtn');
 const filterCompletedBtn = document.getElementById('filterCompletedBtn');
 const quoteText = document.getElementById('quoteText');
 const newQuoteBtn = document.getElementById('newQuoteBtn');
+const enablePushBtn = document.getElementById('enablePushBtn');
+const disablePushBtn = document.getElementById('disablePushBtn');
 
 // =========================================================
 // Константы приложения
@@ -72,6 +74,9 @@ const planningQuotes = [
  * - объекту события, если браузер разрешил показать install-prompt.
  */
 let deferredInstallPrompt = null;
+const PUSH_SUBSCRIPTION_KEY = 'practice_13_14_push_subscription';
+const VAPID_PUBLIC_KEY = 'BBvh44fl9I5XDzI6F26gRCgeLLf0NW0PX-SNG0CNd2bSP3jNydtSqgGTvcNCuD_fZgB_xRF7Ocy8x-v97LPU-fU';
+let socket = null;
 
 // =========================================================
 // Работа с localStorage
@@ -312,6 +317,10 @@ function addTask(text) {
   tasks.unshift(newTask);
   saveTasks(tasks);
   renderTasks();
+
+  if (socket && socket.connected) {
+    socket.emit('newTask', newTask);
+  }
 }
 
 function handleTaskListClick(event) {
@@ -527,55 +536,143 @@ function registerServiceWorker() {
     try {
       const registration = await navigator.serviceWorker.register('./sw.js');
       console.log('Service Worker зарегистрирован:', registration.scope);
+      await initPushSubscriptionState();
+      createSocketConnection();
     } catch (error) {
       console.error('Ошибка регистрации Service Worker:', error);
     }
   });
 }
 
+function createSocketConnection() {
+  if (!window.io) {
+    console.warn('Socket.IO не загружен.');
+    return;
+  }
+
+  socket = io();
+
+  socket.on('connect', () => {
+    console.log('Socket.IO подключение установлено.');
+  });
+
+  socket.on('taskAdded', (task) => {
+    showTaskToast(task);
+  });
+}
+
+function showTaskToast(task) {
+  alert(`Новое событие: добавлена задача «${task.text}».`);
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+
+  return outputArray;
+}
+
+async function subscribeToPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    alert('Push-уведомления не поддерживаются этим браузером.');
+    return;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+
+    await fetch('/subscribe', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ subscription })
+    });
+
+    localStorage.setItem(PUSH_SUBSCRIPTION_KEY, 'subscribed');
+    await updatePushButtons();
+    alert('Вы успешно подписаны на уведомления.');
+  } catch (error) {
+    console.error('Ошибка подписки на push:', error);
+    alert('Не удалось подписаться на уведомления.');
+  }
+}
+
+async function unsubscribeFromPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    alert('Push-уведомления не поддерживаются этим браузером.');
+    return;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+      await updatePushButtons();
+      return;
+    }
+
+    await fetch('/unsubscribe', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ subscription })
+    });
+
+    await subscription.unsubscribe();
+    localStorage.removeItem(PUSH_SUBSCRIPTION_KEY);
+    await updatePushButtons();
+    alert('Уведомления отключены.');
+  } catch (error) {
+    console.error('Ошибка отписки от push:', error);
+    alert('Не удалось отключить уведомления.');
+  }
+}
+
+async function updatePushButtons() {
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
+  const subscribed = Boolean(subscription);
+
+  if (enablePushBtn) {
+    enablePushBtn.disabled = subscribed;
+  }
+  if (disablePushBtn) {
+    disablePushBtn.disabled = !subscribed;
+  }
+}
+
+async function initPushSubscriptionState() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    if (enablePushBtn) enablePushBtn.disabled = true;
+    if (disablePushBtn) disablePushBtn.disabled = true;
+    return;
+  }
+
+  try {
+    await navigator.serviceWorker.ready;
+    await updatePushButtons();
+  } catch (error) {
+    console.error('Не удалось получить состояние push-подписки:', error);
+  }
+}
+
 // =========================================================
 // Инициализация приложения
 // =========================================================
 
-taskForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  addTask(taskInput.value);
-  taskInput.value = '';
-});
-
-taskList.addEventListener('click', handleTaskListClick);
-
-if (clearCompletedBtn) {
-  clearCompletedBtn.addEventListener('click', clearCompletedTasks);
-}
-
-if (filterAllBtn) {
-  filterAllBtn.dataset.filter = 'all';
-  filterAllBtn.addEventListener('click', () => setFilter('all'));
-}
-
-if (filterActiveBtn) {
-  filterActiveBtn.dataset.filter = 'active';
-  filterActiveBtn.addEventListener('click', () => setFilter('active'));
-}
-
-if (filterCompletedBtn) {
-  filterCompletedBtn.dataset.filter = 'completed';
-  filterCompletedBtn.addEventListener('click', () => setFilter('completed'));
-}
-
-if (newQuoteBtn) {
-  newQuoteBtn.addEventListener('click', showRandomQuote);
-}
-
-window.addEventListener('online', updateNetworkStatus);
-window.addEventListener('offline', updateNetworkStatus);
-
-registerServiceWorker();
-updateNetworkStatus();
-updateInstallHint();
-renderTasks();
-showRandomQuote();
 
 // =========================================================
 // Обработчики событий
@@ -595,50 +692,71 @@ taskForm.addEventListener('submit', (event) => {
  * Делегирование кликов по списку задач.
  * Это удобнее, чем навешивать обработчики на каждую кнопку отдельно.
  */
-taskList.addEventListener('click', (event) => {
-  const target = event.target;
-  const taskItem = target.closest('.task-item');
-
-  if (!taskItem) {
-    return;
-  }
-
-  const taskId = taskItem.dataset.id;
-  const action = target.dataset.action;
-
-  if (action === 'delete') {
-    deleteTask(taskId);
-  }
-});
-
-/**
- * Отдельно обрабатываем изменение чекбокса.
- */
-taskList.addEventListener('change', (event) => {
-  const target = event.target;
-
-  if (target.dataset.action !== 'toggle') {
-    return;
-  }
-
-  const taskItem = target.closest('.task-item');
-  if (!taskItem) {
-    return;
-  }
-
-  toggleTask(taskItem.dataset.id);
-});
-
-clearCompletedBtn.addEventListener('click', clearCompletedTasks);
-newQuoteBtn.addEventListener('click', showRandomQuote);
-window.addEventListener('online', updateNetworkStatus);
-window.addEventListener('offline', updateNetworkStatus);
-
 // =========================================================
 // Инициализация
 // =========================================================
 
-function init() {
+function setupEventListeners() {
+  taskForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    addTask(taskInput.value);
+    taskForm.reset();
+    taskInput.focus();
+  });
+
+  taskList.addEventListener('click', handleTaskListClick);
+  taskList.addEventListener('change', (event) => {
+    const target = event.target;
+
+    if (target.dataset.action !== 'toggle') {
+      return;
+    }
+
+    const taskItem = target.closest('.task-item');
+    if (!taskItem) {
+      return;
+    }
+
+    toggleTask(taskItem.dataset.id);
+  });
+
+  if (clearCompletedBtn) {
+    clearCompletedBtn.addEventListener('click', clearCompletedTasks);
+  }
+
+  if (filterAllBtn) {
+    filterAllBtn.dataset.filter = 'all';
+    filterAllBtn.addEventListener('click', () => setFilter('all'));
+  }
+
+  if (filterActiveBtn) {
+    filterActiveBtn.dataset.filter = 'active';
+    filterActiveBtn.addEventListener('click', () => setFilter('active'));
+  }
+
+  if (filterCompletedBtn) {
+    filterCompletedBtn.dataset.filter = 'completed';
+    filterCompletedBtn.addEventListener('click', () => setFilter('completed'));
+  }
+
+  if (newQuoteBtn) {
+    newQuoteBtn.addEventListener('click', showRandomQuote);
+  }
+
+  if (enablePushBtn) {
+    enablePushBtn.addEventListener('click', subscribeToPush);
+  }
+
+  if (disablePushBtn) {
+    disablePushBtn.addEventListener('click', unsubscribeFromPush);
+  }
+
+  window.addEventListener('online', updateNetworkStatus);
+  window.addEventListener('offline', updateNetworkStatus);
+}
+
+async function init() {
+  setupEventListeners();
   updateNetworkStatus();
   updateInstallHint();
   showRandomQuote();

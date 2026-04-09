@@ -68,6 +68,25 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+self.addEventListener('push', (event) => {
+  const payload = event.data?.json() || { title: 'PlanDo', body: 'Новое уведомление от приложения.' };
+
+  const title = payload.title || 'PlanDo';
+  const options = {
+    body: payload.body || 'У вас новое уведомление.',
+    icon: './assets/icons/favicon-128x128.png',
+    badge: './assets/icons/favicon-48x48.png',
+    data: payload.data || {}
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(self.clients.openWindow('./'));
+});
+
 /**
  * fetch:
  * базовая стратегия Cache First.

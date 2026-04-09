@@ -80,6 +80,12 @@
               <button id="installBtn" class="button button--primary button--small" type="button" hidden>
                 Просто возьми и установи PWA!
               </button>
+              <button id="enablePushBtn" class="button button--secondary button--small" type="button">
+                Включить уведомления
+              </button>
+              <button id="disablePushBtn" class="button button--secondary button--small" type="button">
+                Отключить уведомления
+              </button>
               <a class="button button--secondary button--small" href="./about.html">О нас</a>
             </div>
 
@@ -195,6 +201,8 @@
       </footer>
     </div>
 
+    <!-- Socket.IO client script для реального времени -->
+    <script src="/socket.io/socket.io.js"></script>
     <!-- Основная логика приложения -->
     <script src="./app.js"></script>
   </body>
