@@ -37,8 +37,20 @@
     {
       "src": "./assets/icons/favicon-512x512.png",
       "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./assets/hero.png",
+      "sizes": "1468x1244",
       "type": "image/png",
-      "purpose": "any maskable"
+      "form_factor": "wide"
+    },
+    {
+      "src": "./assets/hero.png",
+      "sizes": "1468x1244",
+      "type": "image/png"
     }
   ]
 }
